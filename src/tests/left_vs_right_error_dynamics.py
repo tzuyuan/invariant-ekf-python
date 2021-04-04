@@ -63,7 +63,7 @@ def main():
     print("init P: \n", LI_state.getP())
 
     print("\n\n ------ Propagate using random data -------\n\n")
-    NUM_PROPAGATE = 1
+    NUM_PROPAGATE = 100
 
     for i in range(NUM_PROPAGATE):
         # imu = np.random.normal(0,1,(6,1))

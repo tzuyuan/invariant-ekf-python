@@ -139,7 +139,6 @@ class InEKF:
         G1t = np.transpose(G1)
         G2t = np.transpose(G2)
         G3t = Gamma_SO3(-phi,3)
-        print("G3t:\n",G3t)
         dimX = self.state_.dimX()
         dimTheta = self.state_.dimTheta()
         dimP = self.state_.dimP()
@@ -281,9 +280,7 @@ class InEKF:
         Qd = self.DiscreteNoiseMatrix(Phi,dt)
         P_pred = Phi @ P @ np.transpose(Phi) + Qd
 
-        print("P:\n",P)
-        print("Phi:\n",Phi)
-        np.savetxt(sys.stdout, P)
+        # np.savetxt(sys.stdout, P)
 
         # If we don't want to estimate bias, remove correlation
         if not self.estimate_bias_:
@@ -317,10 +314,6 @@ class InEKF:
             X_pred[0:3,4] = (G0t @ (p + v*dt - (G2 @ a + 0.5 * R @ self.g_)*dt*dt)).reshape(3)
             for i in np.arange(5,dimX):
                 X_pred[0:3,i] = G0t @ X[0:3,i]
-
-        print("X_pred: \n",X_pred)
-        print("P_pred shape: ",np.shape(P_pred))
-        print("P_pred: \n",P_pred)
 
         # ------------ Update State ------------- #
         self.state_.setX(X_pred)
