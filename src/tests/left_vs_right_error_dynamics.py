@@ -45,7 +45,6 @@ def main():
     Adj[0:initial_state.dimP()-initial_state.dimTheta(),0:initial_state.dimP()-initial_state.dimTheta()] = Adjoint_SEK3(initial_state.getX())
 
     # print("Initial Adjoint: \n", Adj)
-
     # Left invariant filter
     initial_state.setP(P)
     LI_filter = InEKF(initial_state, noise_params, ErrorType.LeftInvariant)
@@ -54,16 +53,17 @@ def main():
     initial_state.setP(Adj @ P @ Adj.T)
     RI_filter = InEKF(initial_state, noise_params, ErrorType.RightInvariant)
 
+
     LI_state = LI_filter.getState()
     RI_state = RI_filter.getState()
     print("Left Invariant Initial State: ")
     LI_state.printState()
     print("Right Invariant Initial State: ")
     RI_state.printState()
-
+    print("init P: \n", LI_state.getP())
 
     print("\n\n ------ Propagate using random data -------\n\n")
-    NUM_PROPAGATE = 2
+    NUM_PROPAGATE = 1
 
     for i in range(NUM_PROPAGATE):
         # imu = np.random.normal(0,1,(6,1))

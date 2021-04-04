@@ -18,6 +18,7 @@
 
 import numpy as np
 from enum import Enum
+from copy import deepcopy
 
 from LieGroup import *
 
@@ -37,17 +38,18 @@ class RobotState:
         if X is None: # no input to constructor
             pass
         elif Theta is None: # Only X is the input
-            self.X_ = X
+            self.X_ = X.copy()
             self.P_ = np.eye(3*self.dimX()+self.dimTheta()-6, 3*self.dimX()+self.dimTheta()-6)
         elif P is None: # X and Theta are input
-            self.X_ = X
-            self.Theta_ = Theta
+            self.X_ = X.copy()
+            self.Theta_ = Theta.copy()
             self.P_ = np.eye(3*self.dimX()+self.dimTheta()-6, 3*self.dimX()+self.dimTheta()-6)
         else: # We have X, Theta, and P
-            self.X_ = X
-            self.Theta_ = Theta
-            self.P_ = P
+            self.X_ = X.copy()
+            self.Theta_ = Theta.copy()
+            self.P_ = P.copy()
 
+    
     # some getter functions
     def getX(self):
         return self.X_.copy()
@@ -58,11 +60,11 @@ class RobotState:
     def getRotation(self):
         return self.X_[0:3,0:3].copy()
     def getVelocity(self):
-        return self.X_[0:3,3].reshape(3,1).copy()
+        return self.X_[0:3,3].copy().reshape(3,1)
     def getPosition(self):
-        return self.X_[0:3,4].reshape(3,1).copy()
+        return self.X_[0:3,4].copy().reshape(3,1)
     def getVector(self, idx):
-        return self.X_[0:3,idx].reshape(3,1).copy()
+        return self.X_[0:3,idx].copy().reshape(3,1)
 
 
     def getGyroscopeBias(self):
@@ -95,7 +97,7 @@ class RobotState:
 
     # get states in World/Body frame
     def getStateType(self):
-        return self.state_type_
+        return deepcopy(self.state_type_)
     def getWorldX(self):
         if self.state_type_.name == 'WorldCentric':
             return self.getX()
@@ -140,33 +142,33 @@ class RobotState:
     
 
     def setX(self,X):
-        self.X_ = X
+        self.X_ = X.copy()
     def setTheta(self,Theta):
-        self.Theta_ = Theta
+        self.Theta_ = Theta.copy()
     def setP(self,P):
-        self.P_ = P
+        self.P_ = P.copy()
     def setRotation(self,R):
-        self.X_[0:3,0:3] = R
+        self.X_[0:3,0:3] = R.copy()
     def setVelocity(self,v):
-        self.X_[0:3,3] = v.reshape(3,)
+        self.X_[0:3,3] = v.copy().reshape(3,)
     def setPosition(self,p):
-        self.X_[0:3,4] = p.reshape(3,)
+        self.X_[0:3,4] = p.copy().reshape(3,)
     def setGyroscopeBias(self, bg):
-        self.Theta_[0:3] = bg
+        self.Theta_[0:3] = bg.copy()
     def setAccelerometerBias(self, ba):
-        self.Theta_[3:6] = ba
+        self.Theta_[3:6] = ba.copy()
     def setRotationCovariance(self,cov):
-        self.P_[0:3,0:3] = cov
+        self.P_[0:3,0:3] = cov.copy()
     def setVelocityCovariance(self,cov):
-        self.P_[3:6,3:6] = cov
+        self.P_[3:6,3:6] = cov.copy()
     def setPositionCovariance(self,cov):
-        self.P_[6:9,6:9] = cov
+        self.P_[6:9,6:9] = cov.copy()
     def setGyroscopeBiasCovariance(self,cov):
         i = np.shape(self.P_)[0]
-        self.P_[i-6:i-3,i-6:i-3] = cov
+        self.P_[i-6:i-3,i-6:i-3] = cov.copy()
     def setAccelerometerBiasCovariance(self,cov):
         i = np.shape(self.P_)[0]
-        self.P_[i-3:i,i-3:i] = cov
+        self.P_[i-3:i,i-3:i] = cov.copy()
 
 
 

@@ -15,11 +15,13 @@
  *  @date   April 1, 2021
  **
  '''
+import sys
+sys.path.append('.')
 
 import numpy as np
 from enum import Enum
-import sys
-sys.path.append('.')
+from copy import deepcopy
+
 
 from LieGroup import *
 from NoiseParams import *
@@ -63,17 +65,17 @@ class InEKF:
         self.magnetic_field_[2] = np.sin(1.2049)
 
         if state is not None:
-            self.state_ = state
+            self.state_ = deepcopy(state)
         else:
             self.state_ = RobotState()
 
         if params is not None:
-            self.noise_params_ = params
+            self.noise_params_ = deepcopy(params)
         else:
             self.noise_params_ = NoiseParams()
 
         if error_type is not None:
-            self.error_type_ = error_type
+            self.error_type_ = deepcopy(error_type)
         else:
             self.error_type_ = ErrorType.LeftInvariant
 
@@ -91,16 +93,16 @@ class InEKF:
         return self.error_type_
 
     def getState(self):
-        return self.state_.copy()
+        return deepcopy(self.state_)
 
     def setState(self, state):
-        self.state_ = state
+        self.state_ = deepcopy(state)
 
     def getNoiseParams(self):
-        return self.noise_params_.copy()
+        return deepcopy(self.noise_params_)
 
     def setNoiseParams(self, params):
-        self.noise_params_ = params
+        self.noise_params_ = deepcopy(params)
 
     def getPriorLandmarks(self):
         return self.prior_landmarks_.copy()
@@ -116,13 +118,13 @@ class InEKF:
 
     def setContacts(self, contacts):
         for c in contacts:
-            self.contacts_[c[0]] = c[1]
+            self.contacts_[c[0]] = c[1].copy()
 
     def getContacts(self):
         return self.contacts_.copy()
 
     def setMagneticField(self,true_magnetic_field):
-        self.magnetic_field_ = true_magnetic_field
+        self.magnetic_field_ = true_magnetic_field.copy()
 
     def getMagneticField(self):
         return self.magnetic_field_.copy()
@@ -137,7 +139,7 @@ class InEKF:
         G1t = np.transpose(G1)
         G2t = np.transpose(G2)
         G3t = Gamma_SO3(-phi,3)
-
+        print("G3t:\n",G3t)
         dimX = self.state_.dimX()
         dimTheta = self.state_.dimTheta()
         dimP = self.state_.dimP()
@@ -193,21 +195,24 @@ class InEKF:
         if (self.state_.getStateType().name == 'WorldCentric' and self.error_type_.name == 'LeftInvariant') or \
            (self.state_.getStateType().name == 'BodyCentric' and self.error_type_.name == 'RightInvariant'):
             
-            Phi[0:3,0:3] = G0t
+            Phi[0:3,0:3] = G0t.copy()
             Phi[3:6,0:3] = -G0t@skew(G1@a)*dt
             Phi[6:9,0:3] = -G0t@skew(G2@a)*dt2
-            Phi[3:6,3:6] = G0t
+            Phi[3:6,3:6] = G0t.copy()
             Phi[6:9,3:6] = G0t*dt
-            Phi[6:9,6:9] = G0t
+            Phi[6:9,6:9] = G0t.copy()
 
             for i in np.arange(5,dimX):
-                Phi[(i-2)*3:(i-2)*3+3,(i-2)*3:(i-2)*3+3] = G0t
+                Phi[(i-2)*3:(i-2)*3+3,(i-2)*3:(i-2)*3+3] = G0t.copy()
 
             Phi[0:3,dimP-dimTheta:dimP-dimTheta+3] = -G1t*dt
             Phi[3:6,dimP-dimTheta:dimP-dimTheta+3] = Phi25L
             Phi[6:9,dimP-dimTheta:dimP-dimTheta+3] = Phi35L
             Phi[3:6,dimP-dimTheta+3:dimP-dimTheta+6] = -G1t*dt
             Phi[6:9,dimP-dimTheta+3:dimP-dimTheta+6] = -G0t@G2*dt2
+
+
+            
         else:
             gx = skew(self.g_)
             R = self.state_.getRotation()
@@ -276,6 +281,10 @@ class InEKF:
         Qd = self.DiscreteNoiseMatrix(Phi,dt)
         P_pred = Phi @ P @ np.transpose(Phi) + Qd
 
+        print("P:\n",P)
+        print("Phi:\n",Phi)
+        np.savetxt(sys.stdout, P)
+
         # If we don't want to estimate bias, remove correlation
         if not self.estimate_bias_:
             P_pred[0:dimP-dimTheta,dimP-dimTheta:dimP] = np.zeros((dimP-dimTheta,dimTheta))
@@ -308,6 +317,10 @@ class InEKF:
             X_pred[0:3,4] = (G0t @ (p + v*dt - (G2 @ a + 0.5 * R @ self.g_)*dt*dt)).reshape(3)
             for i in np.arange(5,dimX):
                 X_pred[0:3,i] = G0t @ X[0:3,i]
+
+        print("X_pred: \n",X_pred)
+        print("P_pred shape: ",np.shape(P_pred))
+        print("P_pred: \n",P_pred)
 
         # ------------ Update State ------------- #
         self.state_.setX(X_pred)

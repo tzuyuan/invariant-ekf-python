@@ -69,21 +69,21 @@ def Gamma_SO3(w, m):
         # 0.5*eye(3) + (theta-sin(theta))/theta^3 * A + (2*(cos(theta)-1) + theta^2)/(2*theta^4) * A^2  
         return 0.5*I + (theta-np.sin(theta))/(theta2*theta)*A + (theta2 + 2*np.cos(theta)-2)/(2*theta2*theta2)*A@A
     else: 
-        R = I + (np.sin(theta)/theta)*A + ((1-np.cos(theta))/theta2)*A@A
-        S = I
-        Ak = I
+        R = np.eye(3) + (np.sin(theta)/theta)*A + ((1-np.cos(theta))/theta2)*A@A
+        S = np.eye(3)
+        Ak = np.eye(3)
         kfactorial = 1
-        for k in range(m-1):
-            kfactorial = kfactorial*(k+1)
+        for k in np.arange(1,m+1):
+            kfactorial = kfactorial*(k)
             Ak = Ak@A
             S = (S + (1.0/kfactorial)*Ak)
         
         if m==0:
             return R
         elif m%2:
-            return (1.0/kfactorial)*I + (np.power(-1,(m+1)/2)/np.power(theta,m+1)*A @ (R-S))
+            return (1.0/kfactorial)*np.eye(3) + (np.power(-1,(m+1)/2)/np.power(theta,m+1))*A @ (R-S)
         else:
-            return (1.0/kfactorial)*I + (np.power(-1,m/2)/np.power(theta,m)) * (R - S)
+            return (1.0/kfactorial)*np.eye(3) + (np.power(-1,m/2)/np.power(theta,m)) * (R - S)
 
 def Exp_SO3(w):
     return Gamma_SO3(w,0)
