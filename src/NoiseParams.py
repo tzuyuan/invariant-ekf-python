@@ -20,15 +20,14 @@ import numpy as np
 
 class NoiseParams:
 
-    Qg_ = None
-    Qa_ = None
-    Qbg_ = None
-    Qba_ = None
-    Ql_ = None
-    Qc_ = None
-
-
     def __init__(self):
+        self.Qg_ = None
+        self.Qa_ = None
+        self.Qbg_ = None
+        self.Qba_ = None
+        self.Ql_ = None
+        self.Qc_ = None
+        
         self.setGyroscopeNoise(0.01)
         self.setAccelerometerNoise(0.1)
         self.setGyroscopeBiasNoise(0.00001)

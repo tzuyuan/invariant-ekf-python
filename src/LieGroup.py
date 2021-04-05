@@ -95,7 +95,7 @@ def RightJacobian_SO3(w):
     return Gamma_SO3(-w,1)
 
 def Exp_SEK3(v):
-    assert v.ndim == 1
+    # assert v.ndim == 1
     K = int((v.size-3)/3)
     X = np.eye(3+K)
     R = None
@@ -118,14 +118,14 @@ def Exp_SEK3(v):
     
     X[0:3,0:3] = R
     for i in range(K):
-        X[0:3,3+i] = Jl@v[3+3*i:6+3*i]
+        X[0:3,3+i] = (Jl@v[3+3*i:6+3*i]).reshape(3)
     
     return X
 
 def Adjoint_SEK3(X):
     K = np.shape(X)[1]-3
     Adj = np.zeros((3+3*K,3+3*K))
-    R = X[0:3,0:3]
+    R = X[0:3,0:3].copy()
     Adj[0:3,0:3] = R
     for i in range(K):
         Adj[3+3*i:6+3*i,3+3*i:6+3*i] = R

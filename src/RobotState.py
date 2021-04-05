@@ -28,13 +28,16 @@ class StateType(Enum):
 
 class RobotState:
 
-    # class variables
-    state_type_ = StateType.WorldCentric
-    X_ = np.eye(5)
-    Theta_ = np.zeros((6,1))
-    P_ = np.eye(15)
+    
     
     def __init__(self, X=None, Theta=None, P=None):
+
+        # class variables
+        self.state_type_ = StateType.WorldCentric
+        self.X_ = np.eye(5)
+        self.Theta_ = np.zeros((6,1))
+        self.P_ = np.eye(15)
+        
         if X is None: # no input to constructor
             pass
         elif Theta is None: # Only X is the input

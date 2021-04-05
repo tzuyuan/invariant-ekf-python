@@ -18,44 +18,27 @@
 
 
 import numpy as np
-
+from copy import copy
 
 class Observation:
-
-    Y = None
-    b = None 
-    H = None 
-    N = None 
-    PI = None 
-
     def __init__(self, Y, b, H, N, PI):
-        self.Y = Y
-        self.b = b
-        self.H = H
-        self.N = N
-        self.PI = PI
+        self.Y = Y.copy()
+        self.b = b.copy()
+        self.H = H.copy()
+        self.N = N.copy()
+        self.PI = PI.copy()
 
 
-class Kinematics:
-    
-    # id is a reserved word for python so we use ID here
-    ID = None 
-    pose = None 
-    covariance = None
-
+class Kinematics: 
     def __init__(self, id_in, pose_in, covariance_in):
-        self.ID = id_in
-        self.pose = pose_in
-        self.covariance = covariance_in
+        # id is a reserved word for python so we use ID here
+        self.ID = copy(id_in)
+        self.pose = pose_in.copy()
+        self.covariance = covariance_in.copy()
 
 
 class Landmark:
-
-    ID = None 
-    position = None 
-    covariance = None 
-
     def __init__(self, id_in, position_in, covariance_in):
-        self.ID = id_in
-        self.position = position_in
-        self.covariance = covariance_in
+        self.ID = copy(id_in)
+        self.position = position_in.copy()
+        self.covariance = covariance_in.copy()
