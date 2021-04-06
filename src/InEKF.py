@@ -143,27 +143,6 @@ class InEKF:
         wx = skew(w)
         wx2 = wx@wx
 
-        # print("phi: \n")
-        # np.savetxt(sys.stdout,phi)
-        # print("G0: \n")
-        # np.savetxt(sys.stdout,G0)
-        # print("G1: \n")
-        # np.savetxt(sys.stdout,G1)
-        # print("G2: \n")
-        # np.savetxt(sys.stdout,G2)
-        # print("G3t: \n")
-        # np.savetxt(sys.stdout,G3t)
-        # print("w: \n")
-        # np.savetxt(sys.stdout,w)
-        # print("a: \n")
-        # np.savetxt(sys.stdout,a)
-        # print("w: \n")
-        # np.savetxt(sys.stdout,wx)
-        # print("ax: \n")
-        # np.savetxt(sys.stdout,ax)
-        # print("wx2: \n")
-        # np.savetxt(sys.stdout,wx2)
-
         dt2 = dt*dt
         dt3 = dt2*dt
         theta = np.linalg.norm(w)
@@ -621,6 +600,46 @@ class InEKF:
 
                 # Add to list of estimated contact positions
                 self.estimated_contact_positions_[kin.ID] = startIndex
+
+    # Observation of absolute z-position of contact points (Left-Invariant Measurement)
+    def CorrectContactPosition(self, ID, measured_contact_position, covariance, indices):
+        
+
+        PI = np.empty((0,0))
+        # See if we can find id in estimated_contact_positions
+        if ID in self.estimated_contact_positions_:
+
+            if np.sum(indices) == 0:
+                return
+
+            # Fill out PI
+            I = np.eye(3)
+            PI = I[indices]
+
+            # Fill out observation data
+            dimX = self.state_.dimX()
+            dimTheta = self.state_.dimTheta()
+            dimP = self.state_.dimP()
+
+            # Get contact position
+            d = self.state_.getVector(self.estimated_contact_positions_[ID])
+            
+            # Fill out H
+            H_full = np.zeros((3,dimP))
+            H_full[0:3,0:3] = -skew(d)
+            H_full[0:3,3*self.estimated_contact_positions_[ID]-6:3*self.estimated_contact_positions_[ID]-3] = np.eye(3)
+            H = PI @ H_full            
+
+            # FIll out N
+            N_full = covariance
+            N = PI @ N_full @ PI.T
+
+            # Fill out Z
+            Z_full = measured_contact_position - d
+            Z = PI @ Z_full
+
+            # Correct
+            self.CorrectRightInvariant(Z,H,N)
 
 
 def main():
