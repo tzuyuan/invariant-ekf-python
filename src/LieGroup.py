@@ -18,6 +18,7 @@
 
 import numpy as np
 import scipy.linalg
+import sys
 
 TOLERANCE = 1e-10
 
@@ -25,14 +26,15 @@ def skew(v):
     # M = [[0 , -v[2], v[1]],
     #     [v[2], 0, -v[0]],
     #     [-v[1], v[0], 0]]
-
+    
+    v2 = v.copy()
     M = np.zeros((3,3))
-    M[0,1] = -v[2]
-    M[0,2] = v[1]
-    M[1,0] = v[2]
-    M[1,2] = -v[0]
-    M[2,0] = -v[1]
-    M[2,1] = v[0]
+    M[0,1] = -v2[2]
+    M[0,2] = v2[1]
+    M[1,0] = v2[2]
+    M[1,2] = -v2[0]
+    M[2,0] = -v2[1]
+    M[2,1] = v2[0]
 
     return M
 
@@ -113,9 +115,9 @@ def Exp_SEK3(v):
         ctheta = np.cos(theta)
         oneMinusCosTheta2 = (1-ctheta)/(theta2)
         A2 = A@A
-        R = I + (stheta/theta2)*A + oneMinusCosTheta2*A2
+        R = I + (stheta/theta)*A + oneMinusCosTheta2*A2
         Jl = I + oneMinusCosTheta2*A + ((theta-stheta)/(theta2*theta))*A2
-    
+
     X[0:3,0:3] = R
     for i in range(K):
         X[0:3,3+i] = (Jl@v[3+3*i:6+3*i]).reshape(3)

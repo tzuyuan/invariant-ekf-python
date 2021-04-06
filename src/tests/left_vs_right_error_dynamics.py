@@ -67,11 +67,13 @@ def main():
     NUM_PROPAGATE = 100
 
     for i in range(NUM_PROPAGATE):
-        # imu = np.random.normal(0,1,(6,1))
-        # dt = np.random.normal(0,1)
-        imu = np.array([0,1,2,3,4,5])
-        imu = imu.T.reshape(6,1)
-        dt = 0.5
+        # print("------propagating ",i,"-----------")
+        imu = np.random.normal(0,1,(6,1))
+        dt = np.random.normal(0,1)
+        # imu = np.array([0,1,2,3,4,5],dtype=np.float64)
+        # imu = imu.reshape(6,1)
+        # dt = 0.5
+
         LI_filter.Propagate(imu,dt)
         RI_filter.Propagate(imu,dt)
 
@@ -79,26 +81,30 @@ def main():
     RI_state = RI_filter.getState()
 
 
-    # print("Left Invariant State: ")
-    # LI_state.printState()
-    # print("Right Invariant State: ")
-    # RI_state.printState()
-    # print("Left Invariant Covariance: ")
+    print("Left Invariant State: ")
+    # np.savetxt(sys.stdout,LI_state.getX())
+    LI_state.printState()
+    print("Right Invariant State: ")
+    # np.savetxt(sys.stdout,RI_state.getX())
+    RI_state.printState()
+    print("Left Invariant Covariance: ")
     # print(LI_state.getP(),"\n \n")
-    # print("Right Invariant Covariance: ")
+    np.savetxt(sys.stdout,LI_state.getP())
+    print("Right Invariant Covariance: ")
     # print(RI_state.getP(),"\n \n")
+    np.savetxt(sys.stdout,RI_state.getP())
 
-    # Adj = np.eye(LI_state.dimP())
-    # Adj[0:LI_state.dimP()-LI_state.dimTheta(),0:LI_state.dimP()-LI_state.dimTheta()] = Adjoint_SEK3(LI_state.getX())
-    # print("Difference between right invariant covariance (left is mapped using adjoint): \n")
-    # print( np.linalg.norm(RI_state.getP() - (Adj @ LI_state.getP() @ Adj.T)), "\n \n")
+    Adj = np.eye(LI_state.dimP())
+    Adj[0:LI_state.dimP()-LI_state.dimTheta(),0:LI_state.dimP()-LI_state.dimTheta()] = Adjoint_SEK3(LI_state.getX())
+    print("Difference between right invariant covariance (left is mapped using adjoint): \n")
+    print( np.linalg.norm(RI_state.getP() - (Adj @ LI_state.getP() @ Adj.T)), "\n \n")
    
-    # AdjInv = np.eye(RI_state.dimP())
-    # AdjInv[0:RI_state.dimP()-RI_state.dimTheta(),0:RI_state.dimP()-RI_state.dimTheta()] = Adjoint_SEK3(RI_state.Xinv())
-    # print("Difference between left invariant covariance (right is mapped using adjoint inverse): \n")
-    # print(np.linalg.norm(LI_state.getP() - (AdjInv @ RI_state.getP() @ AdjInv.T)), "\n \n")
-    # print("Difference between state estimates: \n")
-    # print(np.linalg.norm(LI_state.getX() - RI_state.getX()))
+    AdjInv = np.eye(RI_state.dimP())
+    AdjInv[0:RI_state.dimP()-RI_state.dimTheta(),0:RI_state.dimP()-RI_state.dimTheta()] = Adjoint_SEK3(RI_state.Xinv())
+    print("Difference between left invariant covariance (right is mapped using adjoint inverse): \n")
+    print(np.linalg.norm(LI_state.getP() - (AdjInv @ RI_state.getP() @ AdjInv.T)), "\n \n")
+    print("Difference between state estimates: \n")
+    print(np.linalg.norm(LI_state.getX() - RI_state.getX()))
 
 
     print("\n\n ------ Correct using random data -------\n\n")
@@ -107,24 +113,27 @@ def main():
     LI_filter.setContacts(contacts)
     RI_filter.setContacts(contacts)
 
-    NUM_CORRECT = 2
+    NUM_CORRECT = 10
     for i in range(NUM_CORRECT):
         measured_kinematics = []
         pose = np.eye(4)
         p = np.zeros((3,1))
         covariance = np.eye(6)
 
-        p = np.array([i*0.3,i*0.4,i*0.5])
-        pose[0:3,3] = p.copy()
+        # p = np.array([i*0.3,i*0.4,i*0.5])
+        p = np.random.normal(0,1,(3,1))
+        pose[0:3,3] = p.reshape(3).copy()
+        
         measured_kinematics.append(Kinematics(0,pose,covariance))
-
-        p = np.array([i*0.2,i*0.1,i*0.6])
-        pose[0:3,3] = p.copy()
+        
+        # p = np.array([i*0.2,i*0.1,i*0.6])
+        p = np.random.normal(0,1,(3,1))
+        pose[0:3,3] = p.reshape(3).copy()
         measured_kinematics.append(Kinematics(1,pose,covariance))
-        print("\n ---------- LI filter ----------- \n")
+        # print("\n ---------- LI filter ----------- \n")
         LI_filter.CorrectKinematics(measured_kinematics)
         # print("\n ---------- RI filter ----------- \n")
-        # RI_filter.CorrectKinematics(measured_kinematics)
+        RI_filter.CorrectKinematics(measured_kinematics)
         
 
     LI_state = LI_filter.getState()
@@ -132,26 +141,25 @@ def main():
 
     print("Left Invariant State: ")
     LI_state.printState()
-    np.savetxt(sys.stdout,LI_state.getX())
+    # np.savetxt(sys.stdout,LI_state.getX())
     print("\n \n")
     print("Right Invariant State: ")
     RI_state.printState()
     # np.savetxt(sys.stdout,RI_state.getX())
-    # print("\n \n")
+    print("\n \n")
     print("Left Invariant Covariance: ")
     np.savetxt(sys.stdout,LI_state.getP())
     print("\n \n")
     # print(LI_state.getP(),"\n \n")
     print("Right Invariant Covariance: ")
     # print(RI_state.getP(),"\n \n")
-
     np.savetxt(sys.stdout,RI_state.getP())
     print("\n \n")
 
     Adj = np.eye(LI_state.dimP())
     Adj[0:LI_state.dimP()-LI_state.dimTheta(),0:LI_state.dimP()-LI_state.dimTheta()] = Adjoint_SEK3(LI_state.getX())
     print("Difference between right invariant covariance (left is mapped using adjoint): \n")
-    print( np.linalg.norm(RI_state.getP() - (Adj @ LI_state.getP() @ Adj.T)), "\n \n")
+    print(np.linalg.norm(RI_state.getP() - (Adj @ LI_state.getP() @ Adj.T)), "\n \n")
    
     AdjInv = np.eye(RI_state.dimP())
     AdjInv[0:RI_state.dimP()-RI_state.dimTheta(),0:RI_state.dimP()-RI_state.dimTheta()] = Adjoint_SEK3(RI_state.Xinv())

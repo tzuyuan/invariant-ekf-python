@@ -85,7 +85,7 @@ class InEKF:
         self.estimated_contact_positions_ = {}
 
     def getErrorType(self):
-        return self.error_type_
+        return deepcopy(self.error_type_)
 
     def getState(self):
         return deepcopy(self.state_)
@@ -142,6 +142,27 @@ class InEKF:
         ax = skew(a)
         wx = skew(w)
         wx2 = wx@wx
+
+        # print("phi: \n")
+        # np.savetxt(sys.stdout,phi)
+        # print("G0: \n")
+        # np.savetxt(sys.stdout,G0)
+        # print("G1: \n")
+        # np.savetxt(sys.stdout,G1)
+        # print("G2: \n")
+        # np.savetxt(sys.stdout,G2)
+        # print("G3t: \n")
+        # np.savetxt(sys.stdout,G3t)
+        # print("w: \n")
+        # np.savetxt(sys.stdout,w)
+        # print("a: \n")
+        # np.savetxt(sys.stdout,a)
+        # print("w: \n")
+        # np.savetxt(sys.stdout,wx)
+        # print("ax: \n")
+        # np.savetxt(sys.stdout,ax)
+        # print("wx2: \n")
+        # np.savetxt(sys.stdout,wx2)
 
         dt2 = dt*dt
         dt3 = dt2*dt
@@ -237,8 +258,8 @@ class InEKF:
         G = np.eye(dimP)
 
         # Compute G using Adjoint of Xk if needed, otherwise identity (Assumes unpropagated state)
-        if (self.state_.getStateType().name == 'WorldCentric' and self.error_type_.name == 'LeftInvariant') or \
-           (self.state_.getStateType().name == 'BodyCentric' and self.error_type_.name == 'RightInvariant'):
+        if (self.state_.getStateType().name == 'WorldCentric' and self.error_type_.name == 'RightInvariant') or \
+           (self.state_.getStateType().name == 'BodyCentric' and self.error_type_.name == 'LeftInvariant'):
             G[0:dimP-dimTheta,0:dimP-dimTheta] = Adjoint_SEK3(self.state_.getWorldX())
 
         # Continuous noise covariance 
@@ -273,9 +294,14 @@ class InEKF:
         # ------------ Propagate Covariance ------------- #
         Phi = self.StateTransitionMatrix(w,a,dt)
         Qd = self.DiscreteNoiseMatrix(Phi,dt)
-        P_pred = Phi @ P @ np.transpose(Phi) + Qd
+        P_pred = Phi @ P @ Phi.T + Qd
 
-        # np.savetxt(sys.stdout, P)
+        # print("Phi: \n")
+        # np.savetxt(sys.stdout, Phi)
+        # print("Qd: \n")
+        # np.savetxt(sys.stdout, Qd)
+        # print("P_pred: \n")
+        # np.savetxt(sys.stdout, P_pred)
 
         # If we don't want to estimate bias, remove correlation
         if not self.estimate_bias_:
@@ -307,8 +333,8 @@ class InEKF:
             X_pred[0:3,0:3] = G0t @ R
             X_pred[0:3,3] = (G0t @ (v - (G1 @ a + R @ self.g_) * dt)).reshape(3)
             X_pred[0:3,4] = (G0t @ (p + v*dt - (G2 @ a + 0.5 * R @ self.g_)*dt*dt)).reshape(3)
-            for i in np.arange(5,dimX):
-                X_pred[0:3,i] = G0t @ X[0:3,i]
+            for j in np.arange(5,dimX):
+                X_pred[0:3,j] = G0t @ X[0:3,j]
 
         # ------------ Update State ------------- #
         self.state_.setX(X_pred)
@@ -341,7 +367,7 @@ class InEKF:
         PHT = P @ H.T
         S = H @ PHT + N
         K = PHT @ np.linalg.inv(S)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+                  
         # Compute state correction vector
         delta = K @ Z
         dX = Exp_SEK3(delta[0:np.shape(delta)[0]-dimTheta])
@@ -463,7 +489,7 @@ class InEKF:
             # If contact is indicated and id is not found i n estimated_contacts_, then augment state
             elif contact_indicated and (not found):
                 new_contacts.append(kin) # Add to augment list
-                print("adding ",kin.ID," to new contacts")
+                # print("adding ",kin.ID," to new contacts")
             # If contact is indicated and id is found in estimated_contacts_, then correct using kinematics
             elif contact_indicated and found:
                 dimX = self.state_.dimX()
@@ -485,7 +511,7 @@ class InEKF:
                 # Fill out N
                 startIndex = np.shape(N)[0]
                 N = np.hstack((N,np.zeros((startIndex,3))))
-                new_N = self.state_.getRotation() @ kin.covariance[0:3,0:3] @ self.state_.getRotation().T
+                new_N = self.state_.getWorldRotation() @ kin.covariance[3:6,3:6] @ self.state_.getWorldRotation().T
                 temp_bottom = np.hstack((np.zeros((3,startIndex)),new_N))
                 N = np.vstack((N,temp_bottom))
 
@@ -498,9 +524,8 @@ class InEKF:
                     new_Z = R @ (kin.pose[0:3,3].reshape(3,1)) - (d - p)
                     Z = np.vstack((Z,new_Z))
                 else:
-                    new_Z = R.T @ (kin.pose[0:3,3] - (d - p))
+                    new_Z = R.T @ (kin.pose[0:3,3] - (p - d))
                     Z = np.vstack((Z,new_Z))
-
 
             # If contact is not indicated and id is found in estimated_contacts_, then skip
             else:
@@ -524,7 +549,7 @@ class InEKF:
                 np.delete(X_rem,rm_ct,1)
 
                 # Remove 3 rows and columns from P
-                startIndex = 3 + 3*(rm_ct[1]-3)
+                startIndex = 3 + 3*(rm_ct-3)
                 np.delete(P_rem, list(range(startIndex,startIndex+3)),0)
                 np.delete(P_rem, list(range(startIndex,startIndex+3)),1)
 
@@ -538,12 +563,12 @@ class InEKF:
                         self.estimated_contact_positions_[key] -= 1
 
                 # We also need to update the indices of remove_contacts in the case where multiple contacts are being removed at once
-                for i, rm_ct2 in enumerate(remove_contacts):
+                for rm_idx, rm_ct2 in enumerate(remove_contacts):
                     if rm_ct2 > rm_ct:
-                        remove_contacts[i] -= 1
+                        remove_contacts[rm_idx] -= 1
 
                 # Remove from list of estimated contact positions
-                self.estimated_landmarks_.pop(ID)
+                self.estimated_contact_positions_.pop(ID)
             
             # Update state and covariance
             self.state_.setX(X_rem)
@@ -590,8 +615,7 @@ class InEKF:
                         = np.eye(3)
 
                 P_aug = (F @ P_aug @ F.T + G @ kin.covariance[3:6,3:6] @ G.T)
-
-                # Update state and covariance
+                
                 self.state_.setX(X_aug)
                 self.state_.setP(P_aug)
 
@@ -600,14 +624,15 @@ class InEKF:
 
 
 def main():
-    contacts = [[1,0],[2,0],[3,0]]
-    contacts2 = [[1,1],[2,1],[3,1],[4,1]]
-    inekf = InEKF()
-    print(inekf.getState())
-    inekf.setContacts(contacts)
-    print(inekf.getContacts())
-    inekf.setContacts(contacts2)
-    print(inekf.getContacts())
+    pass
+    # contacts = [[1,0],[2,0],[3,0]]
+    # contacts2 = [[1,1],[2,1],[3,1],[4,1]]
+    # inekf = InEKF()
+    # print(inekf.getState())
+    # inekf.setContacts(contacts)
+    # print(inekf.getContacts())
+    # inekf.setContacts(contacts2)
+    # print(inekf.getContacts())
 
 
 if __name__ == '__main__':
